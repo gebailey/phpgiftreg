@@ -45,58 +45,10 @@ if (!empty($_POST["username"])) {
 		exit;
 	}
 }
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\r\n";
-?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-<title>Gift Registry - Login</title>
-<link href="styles.css" type="text/css" rel="stylesheet" />
-</head>
-<body onLoad="document.login.username.focus();">
-<form name="login" method="post" action="login.php">	
-	<div align="center">
-		<img src="images/title.gif" border="0" alt="Gift Registry" title="Gift Registry" />
-	</div>
-	<div align="center">
-		<table cellpadding="3" class="partbox">
-			<?php
-			if (isset($_POST["username"])) {
-				echo "<caption><font color=\"red\">Bad login.</font></caption>";
-			}
-			?>
-			<tr>
-				<td colspan="2" class="partboxtitle" align="center">Login to the Gift Registry</td>
-			</tr>
-			<tr>
-				<td>Username</td>
-				<td>
-					<input name="username" type="text" />
-				</td>
-			</tr>
-			<tr>
-				<td>Password</td>
-				<td>
-					<input name="password" type="password" />
-				</td>
-			</tr>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="submit" value="Login"/>
-				</td>
-			</tr>
-		</table>
-	</div>
-	<p>
-		<div align="center">
-			<a href="signup.php">Need an account?</a>
-		</div>
-	</p>
-	<p>
-		<div align="center">
-			<a href="forgot.php">Forgot your password?</a>
-		</div>
-	</p>
-</form>
-</body>
-</html>
+
+define('SMARTY_DIR',str_replace("\\","/",getcwd()).'/includes/Smarty-3.1.12/libs/');
+require_once(SMARTY_DIR . 'Smarty.class.php');
+$smarty = new Smarty();
+$smarty->assign('username', $_POST['username']);
+$smarty->assign('opt', $OPT);
+$smarty->display('login.tpl');

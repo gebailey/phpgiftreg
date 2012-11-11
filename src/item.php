@@ -29,8 +29,8 @@ else {
 // for security, let's make sure that if an itemid was passed in, it belongs
 // to $userid.  all operations on this page should only be performed by
 // the item's owner.
-if (isset($_GET["itemid"]) && $_GET["itemid"] != "") {
-	$rs = mysql_query("SELECT * FROM {$OPT["table_prefix"]}items WHERE userid = $userid AND itemid = " . (int) $_GET["itemid"]) or die("Could not query: " . mysql_error());
+if (isset($_REQUEST["itemid"]) && $_REQUEST["itemid"] != "") {
+	$rs = mysql_query("SELECT * FROM {$OPT["table_prefix"]}items WHERE userid = $userid AND itemid = " . (int) $_REQUEST["itemid"]) or die("Could not query: " . mysql_error());
 	if (mysql_num_rows($rs) == 0) {
 		echo "Nice try! (That's not your item.)";
 		exit;
@@ -39,19 +39,19 @@ if (isset($_GET["itemid"]) && $_GET["itemid"] != "") {
 }
 
 $action = "";
-if (!empty($_GET["action"])) {
-	$action = $_GET["action"];
+if (!empty($_REQUEST["action"])) {
+	$action = $_REQUEST["action"];
 	
 	if ($action == "insert" || $action == "update") {
 		/* validate the data. */
-		$description = trim($_GET["description"]);
-		$price = str_replace(",","",trim($_GET["price"]));
-		$source = trim($_GET["source"]);
-		$url = trim($_GET["url"]);
-		$category = trim($_GET["category"]);
-		$ranking = $_GET["ranking"];
-		$comment = $_GET["comment"];
-		$quantity = (int) $_GET["quantity"];
+		$description = trim($_REQUEST["description"]);
+		$price = str_replace(",","",trim($_REQUEST["price"]));
+		$source = trim($_REQUEST["source"]);
+		$url = trim($_REQUEST["url"]);
+		$category = trim($_REQUEST["category"]);
+		$ranking = $_REQUEST["ranking"];
+		$comment = $_REQUEST["comment"];
+		$quantity = (int) $_REQUEST["quantity"];
 
 		if (!get_magic_quotes_gpc()) {
 			$description = addslashes($description);
@@ -62,7 +62,7 @@ if (!empty($_GET["action"])) {
 			$ranking = addslashes($ranking);
 			$comment = addslashes($comment);
 		}
-		
+
 		$haserror = false;
 		if ($description == "") {
 			$haserror = true;
@@ -89,10 +89,35 @@ if (!empty($_GET["action"])) {
 			$quantity_error = "A positive quantity is required.";
 		}
 	}
+
+	if (!$haserror) {
+		if ($_REQUEST["image"] == "remove" || $_REQUEST["image"] == "replace") {
+			deleteImageForItem((int) $_REQUEST["itemid"]);
+		}
+		if ($_REQUEST["image"] == "upload" || $_REQUEST["image"] == "replace") {
+			/* TODO: verify that it's an image using $_FILES["imagefile"]["type"] */
+			// what's the extension?
+			$parts = pathinfo($_FILES["imagefile"]["name"]);
+			$uploaded_file_ext = $parts['extension'];
+			// what is full path to store images?  get it from the currently executing script.
+			$parts = pathinfo($_SERVER["SCRIPT_FILENAME"]);
+			$upload_dir = $parts['dirname'];
+			// generate a temporary file in the configured directory.
+			$temp_name = tempnam($upload_dir . "/" . $OPT["image_subdir"],"");
+			// unlink it, we really want an extension on that.
+			unlink($temp_name);
+			// here's the name we really want to use.  full path is included.
+			$image_filename = $temp_name . "." . $uploaded_file_ext;
+			// move the PHP temporary file to that filename.
+			move_uploaded_file($_FILES["imagefile"]["tmp_name"],$image_filename);
+			// the name we're going to record in the DB is the filename without the path.
+			$image_base_filename = basename($image_filename);
+		}
+	}
 	
 	if ($action == "delete") {
 		/* find out if this item is bought or reserved. */
-		$query = "SELECT a.userid, a.quantity, a.bought, i.description FROM {$OPT["table_prefix"]}allocs a INNER JOIN {$OPT["table_prefix"]}items i ON i.itemid = a.itemid WHERE a.itemid = " . (int) $_GET["itemid"];
+		$query = "SELECT a.userid, a.quantity, a.bought, i.description FROM {$OPT["table_prefix"]}allocs a INNER JOIN {$OPT["table_prefix"]}items i ON i.itemid = a.itemid WHERE a.itemid = " . (int) $_REQUEST["itemid"];
 		$rs = mysql_query($query) or die("Could not query: " . mysql_error());
 		while ($row = mysql_fetch_array($rs,MYSQL_ASSOC)) {
 			$buyerid = $row["userid"];
@@ -103,14 +128,15 @@ if (!empty($_GET["action"])) {
 					addslashes("\"" . mysql_escape_string($row["description"]) . "\" that you " . (($bought == 1) ? "bought" : "reserved") . " $quantity of for {$_SESSION["fullname"]} has been deleted.  Check your reservation/purchase to ensure it's still needed."));
 		}
 		mysql_free_result($rs);
-		$query = "DELETE FROM {$OPT["table_prefix"]}items WHERE itemid = " . (int) $_GET["itemid"];
+		deleteImageForItem((int) $_REQUEST["itemid"]);
+		$query = "DELETE FROM {$OPT["table_prefix"]}items WHERE itemid = " . (int) $_REQUEST["itemid"];
 		mysql_query($query) or die("Could not query: " . mysql_error());
 		stampUser($userid);
 		header("Location: " . getFullPath("index.php?message=Item+deleted."));
 		exit;
 	}
 	else if ($action == "edit") {
-		$query = "SELECT description, price, source, category, url, ranking, comment, quantity FROM {$OPT["table_prefix"]}items WHERE itemid = " . (int) $_GET["itemid"];
+		$query = "SELECT description, price, source, category, url, ranking, comment, quantity, image_filename FROM {$OPT["table_prefix"]}items WHERE itemid = " . (int) $_REQUEST["itemid"];
 		$rs = mysql_query($query) or die("Could not query: " . mysql_error());
 		if ($row = mysql_fetch_array($rs,MYSQL_ASSOC)) {
 			$description = $row["description"];
@@ -121,6 +147,7 @@ if (!empty($_GET["action"])) {
 			$ranking = $row["ranking"];
 			$comment = $row["comment"];
 			$quantity = (int) $row["quantity"];
+			$image_filename = $row["image_filename"];
 		}
 		mysql_free_result($rs);
 	}
@@ -133,11 +160,12 @@ if (!empty($_GET["action"])) {
 		$ranking = NULL;
 		$comment = "";
 		$quantity = 1;
+		$image_filename = "";
 	}
 	else if ($action == "insert") {
 		if (!$haserror) {
-			$query = "INSERT INTO {$OPT["table_prefix"]}items(userid,description,price,source,category,url,ranking,comment,quantity) " .
-						"VALUES($userid,'$description',$price,'$source'," . (($category == "") ? "NULL" : "'$category'") . "," . (($url == "") ? "NULL" : "'$url'") . ",$ranking," . (($comment == "") ? "NULL" : "'$comment'") . ",$quantity)";
+			$query = "INSERT INTO {$OPT["table_prefix"]}items(userid,description,price,source,category,url,ranking,comment,quantity" . ($image_base_filename != "" ? ",image_filename" : "") . ") " .
+						"VALUES($userid,'$description',$price,'$source'," . (($category == "") ? "NULL" : "'$category'") . "," . (($url == "") ? "NULL" : "'$url'") . ",$ranking," . (($comment == "") ? "NULL" : "'$comment'") . ",$quantity" . ($image_base_filename != "" ? ",'$image_base_filename'" : "") . ")";
 			mysql_query($query) or die("Could not query: " . mysql_error());
 			stampUser($userid);
 			header("Location: " . getFullPath("index.php"));
@@ -156,7 +184,8 @@ if (!empty($_GET["action"])) {
 					"ranking = $ranking, " .
 					"comment = " . (($comment == "") ? "NULL" : "'$comment'") . ", " . 
 					"quantity = $quantity " .
-					"WHERE itemid = " . (int) $_GET["itemid"];
+					($image_base_filename != "" ? ", image_filename = '$image_base_filename' " : "") .
+					"WHERE itemid = " . (int) $_REQUEST["itemid"];
 			mysql_query($query) or die("Could not query: " . mysql_error());
 			stampUser($userid);
 			header("Location: " . getFullPath("index.php"));
@@ -199,11 +228,11 @@ if ($OPT["show_helptext"]) {
 	<?php
 }
 ?>
-<p><form name="item" method="get" action="item.php">	
+<form name="item" method="POST" action="item.php" enctype="multipart/form-data">	
 	<?php 
 	if ($action == "edit" || (isset($haserror) && $action == "update")) {
 		?>
-		<input type="hidden" name="itemid" value="<?php echo (int) $_GET["itemid"]; ?>">
+		<input type="hidden" name="itemid" value="<?php echo (int) $_REQUEST["itemid"]; ?>">
 		<input type="hidden" name="action" value="update">
 		<?php
 	}
@@ -320,6 +349,55 @@ if ($OPT["show_helptext"]) {
 					?>
 				</td>
 			</tr>
+			<?php
+			if ($OPT["allow_images"]) {
+				?>
+				<tr valign="top">
+					<td>Image<br /><i>(optional)</i></td>
+					<td>
+						<table border="0" cellpadding="2" cellspacing="2">
+							<?php
+							if ($image_filename == "") {
+								?>
+								<tr>
+									<td><input type="radio" name="image" value="none" CHECKED /></td>
+									<td>No image.</td>
+								</tr>
+								<tr valign="top">
+									<td rowspan="2"><input type="radio" name="image" value="upload" /></td>
+									<td>Upload image:</td>
+								</tr>
+								<tr valign="top">
+									<td><input type="file" name="imagefile" /></td>
+								</tr>
+								<?php
+							}
+							else {
+								?>
+								<tr>
+									<td><input type="radio" name="image" value="remove" /></td>
+									<td>Remove existing image.</td>
+								</tr>
+								<tr>
+									<td><input type="radio" name="image" value="keep" CHECKED /></td>
+									<td>Keep existing image.</td>
+								</tr>
+								<tr valign="top">
+									<td rowspan="2"><input type="radio" name="image" value="replace" /></td>
+									<td>Replace existing image:</td>
+								</tr>
+								<tr valign="top">
+									<td><input type="file" name="imagefile" /></td>
+								</tr>
+								<?php
+							}
+							?>
+						</table>
+					</td>
+				</tr>
+				<?php
+			}
+			?>
 			<tr valign="top">
 				<td>Comment<br /><i>(optional)</i></td>
 				<td>
@@ -327,7 +405,7 @@ if ($OPT["show_helptext"]) {
 				</td>
 			</tr>
 		</table>
-	</div></p>
+	</div>
 	<p>
 		<div align="center">
 			<input type="submit" value="Save"/>

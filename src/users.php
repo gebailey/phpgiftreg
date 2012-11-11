@@ -85,7 +85,7 @@ if ($action == "delete") {
 	exit;
 }
 else if ($action == "edit") {
-	$query = "SELECT username, fullname, email, email_msgs, approved, admin FROM {$OPT["table_prefix"]}users WHERE userid = " . $_GET["userid"];
+	$query = "SELECT username, fullname, email, email_msgs, approved, admin FROM {$OPT["table_prefix"]}users WHERE userid = " . (int) $_GET["userid"];
 	$rs = mysql_query($query) or die("Could not query: " . mysql_error());
 	if ($row = mysql_fetch_array($rs,MYSQL_ASSOC)) {
 		$username = $row["username"];

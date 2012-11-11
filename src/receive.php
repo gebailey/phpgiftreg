@@ -42,6 +42,7 @@ stampUser($userid);
 if ($quantity == 1) {
 	/* just delete the alloc and the item and get out.
 		yes, it's possible the item was RESERVED, not PURCHASED. */
+	deleteImageForItem($itemid);
 	$query = "DELETE FROM {$OPT["table_prefix"]}allocs WHERE itemid = $itemid";
 	mysql_query($query) or die("Could not query: " . mysql_error());
 	$query = "DELETE FROM {$OPT["table_prefix"]}items WHERE itemid = $itemid";
@@ -60,6 +61,7 @@ else if ($action == "receive") {
 	
 	if ($actual == $quantity) {
 		// now they're all gone.
+		deleteImageForItem($itemid);
 		$query = "DELETE FROM {$OPT["table_prefix"]}items WHERE itemid = $itemid";
 	}
 	else {

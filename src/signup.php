@@ -207,7 +207,6 @@ else {
 						$families = mysql_query($query) or die("Could not query: " . mysql_error());
 						?>
 						<select name="familyid">
-							<option value="">(No family)</option>
 							<?php
 							while ($row = mysql_fetch_array($families,MYSQL_ASSOC)) {
 								?>

@@ -81,6 +81,7 @@ CREATE TABLE `items` (
   `category` int(11) default NULL,
   `comment` text,
   `quantity` int(11) NOT NULL default '0',
+  `image_filename` varchar(255) default NULL,
   PRIMARY KEY  (`itemid`)
 ) TYPE=MyISAM;
 
@@ -169,13 +170,3 @@ CREATE TABLE memberships (
   familyid int(11) NOT NULL default '0',
   PRIMARY KEY  (userid,familyid)
 ) TYPE=MyISAM;
-
---
--- Change this row
--- NOTE: if you're going to be using $OPT["password_hasher"] immediately,
--- you'll want to add in a call to MD5() or SHA1() around 'password'.
---
-
-INSERT INTO users(userid,username,password,fullname,email,approved,admin) VALUES (1,'username',MD5('password'),'fullname','your@email.address',1,1);
-INSERT INTO families(familyid,familyname) VALUES(1,'Default family');
-INSERT INTO memberships(familyid,userid) VALUES(1,1);

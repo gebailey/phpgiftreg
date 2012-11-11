@@ -1,6 +1,7 @@
 body
 {
 	font-family: Georgia;
+	font-size: 11pt;
 }
 .evenrow
 {
@@ -24,6 +25,7 @@ body
 }
 .partbox
 {
+	text-align: left;
 	padding-right: 0px;
 	padding-left: 0px;
 	border-left-color: navy;
@@ -75,3 +77,9 @@ body
 	font-size: larger;
 	font-weight: bolder;
 }
+/*
+td
+{
+	text-align: left;
+}
+*/

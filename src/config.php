@@ -91,7 +91,8 @@ $OPT["password_length"] = 8;
 */
 $OPT["hide_zero_price"] = 1;
 
-/* Whether or not to hash passwords.  Your version of MySQL may or may not support it.
+/* Whether or not to hash passwords.  Your version of MySQL may or may not
+	support it.
 	"MD5" = use MySQL's MD5() function,
 	"SHA1" = use MySQL's SHA1() function,
 	"" = use nothing (store passwords in plaintext).
@@ -101,4 +102,17 @@ on your database to convert the passwords.  This operation is NON-REVERSIBLE!
 */
 $OPT["password_hasher"] = "MD5";
 
+/* Whether or not to allow image uploads.  If on, the next option must point to
+	a valid subdirectory that is writeable by the web server.  The setup.php
+	script will confirm this.
+	0 = don't allow images,
+	1 = allow images
+*/
+$OPT["allow_images"] = 1;
+
+/* The *sub*-directory we we can store item images.  If you don't want to
+	allow images to be attached to items, leave this variable empty ("").
+	Trailing / is optional.
+*/
+$OPT["image_subdir"] = "item_images/";
 ?>

@@ -136,6 +136,27 @@ function formatPrice($price) {
 
 function stampUser($userid) {
 	$query = "UPDATE {$GLOBALS["OPT"]["table_prefix"]}users SET list_stamp = NOW() WHERE userid = $userid";
-        mysql_query($query) or die("Could not query: " . mysql_error());
+	mysql_query($query) or die("Could not query: " . mysql_error());
+}
+
+function deleteImageForItem($itemid) {
+	$query = "SELECT image_filename FROM {$GLOBALS["OPT"]["table_prefix"]}items WHERE itemid = $itemid";
+	$rs = mysql_query($query) or die("Could not query: " . mysql_error());
+	if ($row = mysql_fetch_array($rs,MYSQL_ASSOC)) {
+		if ($row["image_filename"] != "") {
+			unlink($GLOBALS["OPT"]["image_subdir"] . "/" . $row["image_filename"]);
+		}
+	}
+	mysql_free_result($rs);
+	$query = "UPDATE {$GLOBALS["OPT"]["table_prefix"]}items SET image_filename = NULL WHERE itemid = $itemid";
+	mysql_query($query) or die("Could not query: " . mysql_error());
+}
+
+function fixForJavaScript($s) {
+	$s = htmlentities($s);
+	$s = str_replace("'","\\'",$s);
+	$s = str_replace("\r\n","<br />",$s);
+	$s = str_replace("\n","<br />",$s);
+	return $s;
 }
 ?>
