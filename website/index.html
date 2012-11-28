@@ -86,11 +86,23 @@
 <br />
 <div class="block">
 	<h3>Documentation</h3>
-	<p>I don't have documentation written yet.  Luckily, using the website is self-explanatory.</p>
+	<p>Here are some basic instructions to get you going.</p>
+	<p>A phpgiftreg installation consists of a set of <em>users</em>.  Each user is a family member who maintains their own gift list.  One or more users are designated as <em>administrators</em>; these users handle approvals of new users and can maintain <em>categories</em> and <em>rankings</em> (described below).  When you run the setup script for the phpgiftreg, you will create the first administrator.</p>
+	<p>Users belong to zero or more <em>families</em>.  (A user <strong>should</strong> always belong to one or more families.)  A family is simply a group of users who would be interested in exchanging gifts for each other.  For example, if Adam Smith marries Jane Doe, you'd likely have two families defined: the Smiths and the Does.  Adam and Jane would probably belong to both families, while Adam's parents and siblings would only belong to the Smith family, and Jane's parents and siblings would only belong to the Doe family.  This prevents Adam's second-cousin-twice-removed from seeing Jane's orthodontist, for example.  Users can easily be added and removed from families.</p>
+	<p>Each user maintains a list of users that he/she <em>shops for</em>.  All this means is that he can see that user's gift list.  Your phpgiftreg installation can be set up to auto-allow <em>shopping requests</em>; otherwise, a user who requests to shop for another user must wait for the recipient to approve the request.</p>
+	<p>A gift list consists of a set of zero or more <em>items</em>.  Each item has a description, an estimated price, a <em>category</em>, a store/retailer where it can be purchased, a <em>ranking</em>, a quantity, a URL where potential buyers can find more information, a comment, and an image.  Only the description, price, category, store/retailer, ranking and quantity are mandatory.</p>
+	<p>Rankings and categories are maintained by the administrator.  For the most part, the rankings should be adequate for most users, but the categories can be easily extended.</p>
+	<p>When a user shops for another user, he/she can <em>reserve</em> or <em>purchase</em> an item.  A reservation simply marks the the <strong>intention</strong> of the buyer to purchase the item.  A purchase marks the user as having purchased the item.</p>
+	<p>When quantities are involved, multiple users can allocate different amounts of reservations and purchases for the same item.  For example, Jane Doe can ask for 10 steak knives.  Adam's mom can reserve 4 and Jane's friend can purchase 2, leaving 4 available.  Once Adam's mom buys the 4 knives, she can <em>convert</em> them to a purchase.  If she changes her mind, she can <em>release</em> the reservation, leaving 8 available.  Purchases can always be <em>returned</em>, which converts them back to a reservation.</p>
+	<p>If <em>anonymous purchasing</em> is turned on in the config.php, anybody shopping for another user can see how many of an item are reserved/purchased, but not who did so.</p>
+	<p>A user who has made multiple reservations/purchases for another user can use the <em>shopping list</em> feature to quickly print off a list of items they have reserved or purchased.  This is handy to take to the store, rather than printing off each user's full list.</p>
+	<p>Once a user receives an item, he/she can mark the item as received, which is different from a deletion in that only the received quantity is debited from their item.  If a reserved/purchased item is deleted without being received, a <em>message</em> is privately sent to the reserver/purchaser to inform them that the item is no longer required.</p>
+	<p>The system also allows the definition of <em>events</em>, which are gift-bearing opportunities, like Christmas and birthdays.  Events can be <em>personal</em> or <em>system events</em>.  Personal events are events specific to that user, like a birthday or anniversary.  System events are events that apply to the entire family, like Christmas or Hanukkah.  All events can be marked as <em>recurring</em>, meaning they repeat year after year.  Only the administrator can modify system events.</p>
+	<p>The system also supports <em>messages</em>, which is a basic send/receive system for notifications.  Most users should have the option set to automatically e-mail any messages received, provided they have specified a valid e-mail address.</p>
 </div>
 <br />
 <div class="block">
-	<i>Copyright 2004 Ryan Walberg &lt;<a href="mailto:generalpf@yahoo.com">generalpf@yahoo.com</a>&gt;</i>
+	<i>Copyright 2008 Ryan Walberg &lt;<a href="mailto:generalpf@yahoo.com">generalpf@yahoo.com</a>&gt;</i>
 </div>
 <p align="center">
 	<A href="http://sourceforge.net"> <IMG src="http://sourceforge.net/sflogo.php?group_id=110846&amp;type=5" width="210" height="62" border="0" alt="SourceForge.net Logo" /></A>
