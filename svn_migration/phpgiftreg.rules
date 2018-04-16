@@ -1,0 +1,27 @@
+create repository phpgiftreg
+end repository
+
+match /trunk/
+  repository phpgiftreg
+  branch master
+end match
+
+# Handle tagging structure (keep src/ prefix)
+match /(branches|tags)/src/([^/]+)/
+  repository phpgiftreg
+  branch \2
+  prefix src/
+end match
+
+match /(branches|tags)/src/
+end match
+
+# Handle early revisions before /trunk
+match /(src|website)/
+  repository phpgiftreg
+  branch master
+  prefix \1/
+  min revision 1
+  max revision 13
+end match
+
