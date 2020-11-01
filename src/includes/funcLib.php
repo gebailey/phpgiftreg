@@ -92,30 +92,48 @@ function getExistingQuantity($itemid, $userid, $bought, $dbh, $opt) {
 	}
 }
 
-function processSubscriptions($publisher, $action, $itemdesc, $dbh, $opt) {
+function processSubscriptions($publisher, $submitter, $action, $itemdesc, $dbh, $opt) {
 	// join the users table as a cheap way to get the guy's name without having to pass it in.
-	$stmt = $dbh->prepare("SELECT subscriber, fullname FROM subscriptions sub INNER JOIN users u ON u.userid = sub.publisher WHERE publisher = ? AND (last_notified IS NULL OR DATE_ADD(last_notified, INTERVAL {$opt["notify_threshold_minutes"]} MINUTE) < NOW())");
-	$stmt->bindParam(1, $publisher, PDO::PARAM_INT);
+	// get the submitters name as well, since we might need the names of both the submitter and recipient of gift suggestions.
+	$stmt = $dbh->prepare("SELECT subscriber, u1.fullname fn_publisher, u2.fullname fn_submitter FROM subscriptions sub INNER JOIN users u1 ON u1.userid = sub.publisher INNER JOIN users u2 ON u2.userid = ? WHERE publisher = ? AND (last_notified IS NULL OR DATE_ADD(last_notified, INTERVAL {$opt["notify_threshold_minutes"]} MINUTE) < NOW())");
+	$stmt->bindParam(1, $submitter, PDO::PARAM_INT);
+	$stmt->bindParam(2, $publisher, PDO::PARAM_INT);
 	$stmt->execute();
 
 	$msg = "";
 	while ($row = $stmt->fetch()) {
 		if ($msg == "") {
 			// same message for each user but we need the fullname from the first row before we can assemble it.
-			if ($action == "insert") {
-				$msg = $row["fullname"] . " has added the item \"$itemdesc\" to their list.";
+			if ($publisher == $submitter) {
+				if ($action == "insert") {
+					$msg = $row["fn_publisher"] . " has added the item \"$itemdesc\" to their list.";
+				}
+				else if ($action == "update") {
+					$msg = $row["fn_publisher"] . " has updated the item \"$itemdesc\" on their list.";
+				}
+				else if ($action == "delete") {
+					$msg = $row["fn_publisher"] . " has deleted the item \"$itemdesc\" from their list.";
+				}
 			}
-			else if ($action == "update") {
-				$msg = $row["fullname"] . " has updated the item \"$itemdesc\" on their list.";
-			}
-			else if ($action == "delete") {
-				$msg = $row["fullname"] . " has deleted the item \"$itemdesc\" from their list.";
+			else {
+				// the item is a suggestion; modify message accordingly.
+				if ($action == "insert") {
+					$msg = $row["fn_submitter"] . " has added the item \"$itemdesc\" as a suggestion for " . $row["fn_publisher"] . ".";
+				}
+				else if ($action == "update") {
+					$msg = $row["fn_submitter"] . " has updated the item \"$itemdesc\" as a suggestion for " . $row["fn_publisher"] . ".";
+				}
+				else if ($action == "delete") {
+					$msg = $row["fn_submitter"] . " has deleted the item \"$itemdesc\" as a suggestion for " . $row["fn_publisher"] . ".";
+				}
 			}
 			$msg .= "\r\n\r\nYou are receiving this message because you are subscribed to their updates.  You will not receive another message for their updates for the next " . $opt["notify_threshold_minutes"] . " minutes.";
 		}
-		sendMessage($publisher, $row["subscriber"], $msg, $dbh, $opt);
 
-		// stamp the subscription.
+		// send the message from the person who submitted the item.
+		sendMessage($submitter, $row["subscriber"], $msg, $dbh, $opt);
+
+		// stamp the subscription using the person who is subscribed to (not necessarily the submitter)
 		$stmt2 = $dbh->prepare("UPDATE subscriptions SET last_notified = NOW() WHERE publisher = ? AND subscriber = ?");
 		$stmt2->bindParam(1, $publisher, PDO::PARAM_INT);
 		$stmt2->bindParam(2, $row["subscriber"], PDO::PARAM_INT);

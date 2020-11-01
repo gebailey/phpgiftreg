@@ -39,6 +39,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 				imageBtnNext: 'lightbox/images/lightbox-btn-next.gif'
 			});
 			$('a[rel=popover]').removeAttr('href').popover();
+			{if $opt.confirm_item_deletes}
+				$('a[rel=confirmitemdelete]').click(function(event) {
+					var desc = $(this).attr('data-content');
+					if (!window.confirm('Are you sure you want to delete "' + desc + '"?')) {
+						event.preventDefault();
+					}
+				});
+			{/if}
 		});
 	</script>
 </head>
@@ -101,6 +109,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					<td nowrap>{$row.rendered}</td>
 					<td>
 						{$row.description|escape:'htmlall'}
+						{if $row.submitterid != $shopfor}
+							{if $row.submitterid == $userid}
+								(suggested by you)
+							{else}
+								(suggested by {$row.sfullname|escape:'htmlall'})
+							{/if}
+						{/if}
 						{if $row.comment != ''}
 							<a class="btn btn-small" rel="popover" href="#" data-placement="right" data-original-title="Comment" data-content="{$row.comment|escape:'htmlall'}">...</a>
 						{/if}
@@ -203,11 +218,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 					{/if}
 					{* <td> *}
 						<a href="shop.php?action=copy&itemid={$row.itemid}&shopfor={$shopfor}"><img alt="I Want This Too" title="I Want This Too" src="images/split-2.png" border="0" /></a>
+						{if $row.submitterid == $userid}
+							<a href="item.php?action=edit&itemid={$row.itemid}"><img alt="Edit Suggestion" title="Edit Suggestion" src="images/pencil.png" border="0" /></a>
+							<a rel="confirmitemdelete" data-content="{$row.description|escape:'htmlall'}" href="item.php?action=delete&itemid={$row.itemid}"><img alt="Delete Suggestion" title="Delete Suggestion" src="images/bin.png" border="0" /></a>
+						{/if}
 					</td>
 				</tr>
 			{/foreach}
 			</tbody>
 		</table>
+		<h5><a href="item.php?action=suggest&shopfor={$shopfor}">Suggest an item for {$ufullname|escape:'htmlall'}</a></h5>
 	</div>
 	</div>
 	</div>

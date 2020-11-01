@@ -114,6 +114,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 			{if $opt.allow_multiples}
 				<li>The quantity field indicates the number of that item that you want.  Once that many are bought or reserved, no more will be available.  If you have no limit on how many you want, enter 999 (for example).</li>
 			{/if}
+			{if $action == 'suggest'}
+				<li>Any item that you suggest will be visible to everyone except that person.</li>
+			{/if}
 		</ul>
 				</div>
 			</div>
@@ -129,6 +132,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 						<input type="hidden" name="action" value="update">
 					{elseif $action == "add" || (isset($haserror) && $action == 'insert')}
 						<input type="hidden" name="action" value="insert">
+					{elseif $action == "suggest" || (isset($haserror) && $action == 'insert')}
+						<input type="hidden" name="action" value="insert">
+						<input type="hidden" name="shopfor" value="{$shopfor}">
 					{/if}
 					<div class="control-group {if isset($description_error)}warning{/if}">
 						<label class="control-label" for="description">Description</label>
