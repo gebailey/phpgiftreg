@@ -1,0 +1,58 @@
+PHP Gift Registry 3.0.1 - Gift Suggestions patch
+================================================
+
+
+Overview
+--------
+This patch to PHP Gift Registry 2.1.2 adds the ability to suggest gift items
+for PHP Gift Registry users.
+
+While viewing the list of items for someone that you're shopping for, you have
+the ability (via a link that's shown) to suggest an item for that person.  If
+you add a suggestion for a user, then the item suggested will appear on that
+user's list for everyone except that person.  i.e. parents may want to suggest
+an item for their child without the child knowing what was suggested.  Other
+shoppers (like Grandma) can then reserve and/or purchase items for the child
+the usual way.
+
+Currently, the submitter of a suggestion is the only person who can edit or
+delete a suggestion.
+
+Notifications and subscriptions work the usual way, with the exception that the
+message will appear to come from the submitter of the suggestion.
+
+
+Author
+------
+Greg Bailey <gbailey@lxpro.com>
+
+
+Database Schema Changes
+-----------------------
+This patch requires a modification to the items table to add a column
+"submitterid" to track who originally submitted the item.
+
+In the usual case, where the user adds an item to his or her own list, then
+userid == submitterid.
+
+In the new case, where an item is suggested, then userid identifies the user
+for whom the item is suggested, and submitterid identifies the user who made
+the suggestion.
+
+The following 2 SQL statements should be used to add this column:
+
+    alter table items add column submitterid int(11) not null default 0 after userid;
+
+    update items set submitterid = userid;
+
+
+To Do
+-----
+Currently, if a user is allowed to shop for someone, he or she is also allowed
+to submit a gift suggestion for that person.
+
+According to comments in
+http://sourceforge.net/p/phpgiftreg/feature-requests/53/ the ability to approve
+submitting gift suggestions would need to be incorporated before a patch like
+this could be considered for inclusion in PHP Gift Registry.
+

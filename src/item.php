@@ -28,11 +28,12 @@ else {
 }
 
 // for security, let's make sure that if an itemid was passed in, it belongs
-// to $userid.  all operations on this page should only be performed by
-// the item's owner.
+// to $userid or, for a suggested item, it belongs to the user making the suggestion.
+// all operations on this page should only be performed by
+// the item's owner or the user making the suggestion.
 if (isset($_REQUEST["itemid"]) && $_REQUEST["itemid"] != "") {
 	try {
-		$stmt = $smarty->dbh()->prepare("SELECT * FROM {$opt["table_prefix"]}items WHERE userid = ? AND itemid = ?");
+		$stmt = $smarty->dbh()->prepare("SELECT * FROM {$opt["table_prefix"]}items WHERE submitterid = ? AND itemid = ?");
 		$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 		$stmt->bindValue(2, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 		$stmt->execute();
@@ -115,7 +116,7 @@ if (!empty($_REQUEST["action"])) {
 	if ($action == "delete") {
 		try {
 			/* find out if this item is bought or reserved. */
-			$stmt = $smarty->dbh()->prepare("SELECT a.userid, a.quantity, a.bought, i.description FROM {$opt["table_prefix"]}allocs a LEFT OUTER JOIN {$opt["table_prefix"]}items i ON i.itemid = a.itemid WHERE a.itemid = ?");
+			$stmt = $smarty->dbh()->prepare("SELECT a.userid, a.quantity, a.bought, i.description, u.fullname FROM {$opt["table_prefix"]}allocs a LEFT OUTER JOIN {$opt["table_prefix"]}items i ON i.itemid = a.itemid LEFT OUTER JOIN {$opt["table_prefix"]}users u ON u.userid = i.userid WHERE a.itemid = ?");
 			$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
 			$stmt->execute();
 			$description = ""; // need this outside of the while block.
@@ -127,13 +128,24 @@ if (!empty($_REQUEST["action"])) {
 				if ($buyerid != null) {
 					sendMessage($userid,
 						$buyerid,
-						"$description that you " . (($bought == 1) ? "bought" : "reserved") . " $quantity of for {$_SESSION["fullname"]} has been deleted.  Check your reservation/purchase to ensure it's still needed.",
+						"$description that you " . (($bought == 1) ? "bought" : "reserved") . " $quantity of for " . $row["fullname"] . " has been deleted.  Check your reservation/purchase to ensure it's still needed.",
 						$smarty->dbh(),
 						$smarty->opt());
 				}
 			}
 	
 			deleteImageForItem((int) $_REQUEST["itemid"], $smarty->dbh(), $smarty->opt());
+
+			// get the userid, submitterid, and description to pass to processSubscriptions()
+			// if there weren't any allocs rows, then description is undefined because no rows were returned above
+			$stmt = $smarty->dbh()->prepare("SELECT userid, submitterid, description FROM {$opt["table_prefix"]}items WHERE itemid = ?");
+			$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
+			$stmt->execute();
+			if ($row = $stmt->fetch()) {
+				$userid = $row["userid"];
+				$submitterid = $row["submitterid"];
+				$description = $row["description"];
+			}
 
 			$stmt = $smarty->dbh()->prepare("DELETE FROM {$opt["table_prefix"]}items WHERE itemid = ?");
 			$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
@@ -142,7 +154,7 @@ if (!empty($_REQUEST["action"])) {
 			// TODO: are we leaking allocs records here?
 		
 			stampUser($userid, $smarty->dbh(), $smarty->opt());
-			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
+			processSubscriptions($userid, $submitterid, $action, $description, $smarty->dbh(), $smarty->opt());
 
 			header("Location: " . getFullPath("index.php?message=Item+deleted."));
 			exit;
@@ -179,27 +191,53 @@ if (!empty($_REQUEST["action"])) {
 		$quantity = 1;
 		$image_filename = "";
 	}
+	else if ($action == "suggest") {
+		if (isset($_REQUEST["shopfor"]) && $_REQUEST["shopfor"] != "") {
+			$shopfor = (int) $_REQUEST["shopfor"];
+		}
+		$description = "";
+		$price = 0.00;
+		$source = "";
+		$url = "";
+		$category = NULL;
+		$ranking = NULL;
+		$comment = "";
+		$quantity = 1;
+		$image_filename = "";
+	}
 	else if ($action == "insert") {
 		if (!$haserror) {
-			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}items(userid,description,price,source,category,url,ranking,comment,quantity,image_filename) " .
-			    "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+			// Keep track of who's submitting this item; if the user is adding an
+			// item on his or her own list, then submitterid == userid.  Otherwise,
+			// set the submitterid to the current user, and the userid to the person
+			// being shopped for (the shopfor parameter).
+
+			$submitterid = $userid;
+			if (isset($_REQUEST["shopfor"])) {
+				$userid = (int) $_REQUEST["shopfor"];
+			}
+
+			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}items(userid,submitterid,description,price,source,category,url,ranking,comment,quantity,image_filename) " .
+			    "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 			$stmt->bindParam(1, $userid, PDO::PARAM_INT);
-			$stmt->bindParam(2, $description, PDO::PARAM_STR);
-			$stmt->bindParam(3, $price);
-			$stmt->bindParam(4, $source, PDO::PARAM_STR);
-			$stmt->bindParam(5, $category, PDO::PARAM_INT);
-			$stmt->bindParam(6, $url, PDO::PARAM_STR);
-			$stmt->bindParam(7, $ranking, PDO::PARAM_INT);
-			$stmt->bindParam(8, $comment, PDO::PARAM_STR);
-			$stmt->bindParam(9, $quantity, PDO::PARAM_INT);
+			$stmt->bindParam(2, $submitterid, PDO::PARAM_INT);
+			$stmt->bindParam(3, $description, PDO::PARAM_STR);
+			$stmt->bindParam(4, $price);
+			$stmt->bindParam(5, $source, PDO::PARAM_STR);
+			$stmt->bindParam(6, $category, PDO::PARAM_INT);
+			$stmt->bindParam(7, $url, PDO::PARAM_STR);
+			$stmt->bindParam(8, $ranking, PDO::PARAM_INT);
+			$stmt->bindParam(9, $comment, PDO::PARAM_STR);
+			$stmt->bindParam(10, $quantity, PDO::PARAM_INT);
             if (!isset($image_base_filename) || $image_base_filename == "") {
                 $image_base_filename = NULL;
             }
-			$stmt->bindParam(10, $image_base_filename, PDO::PARAM_STR);
+			$stmt->bindParam(11, $image_base_filename, PDO::PARAM_STR);
 			$stmt->execute();
 			
 			stampUser($userid, $smarty->dbh(), $smarty->opt());
-			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
+			processSubscriptions($userid, $submitterid, $action, $description, $smarty->dbh(), $smarty->opt());
 
 			header("Location: " . getFullPath("index.php"));
 			exit;
@@ -236,8 +274,17 @@ if (!empty($_REQUEST["action"])) {
 			}
 			$stmt->execute();
 
+			// get the userid and submitterid to pass to processSubscriptions()
+			$stmt = $smarty->dbh()->prepare("SELECT userid, submitterid FROM {$opt["table_prefix"]}items WHERE itemid = ?");
+			$stmt->bindValue(1, (int) $_REQUEST["itemid"], PDO::PARAM_INT);
+			$stmt->execute();
+			if ($row = $stmt->fetch()) {
+				$userid = $row["userid"];
+				$submitterid = $row["submitterid"];
+			}
+
 			stampUser($userid, $smarty->dbh(), $smarty->opt());
-			processSubscriptions($userid, $action, $description, $smarty->dbh(), $smarty->opt());
+			processSubscriptions($userid, $submitterid, $action, $description, $smarty->dbh(), $smarty->opt());
 
 			header("Location: " . getFullPath("index.php"));
 			exit;		
@@ -264,6 +311,7 @@ while ($row = $stmt->fetch()) {
 }
 
 $smarty->assign('userid', $userid);
+$smarty->assign('shopfor', $shopfor);
 $smarty->assign('action', $action);
 $smarty->assign('haserror', isset($haserror) ? $haserror : false);
 if (isset($_REQUEST['itemid'])) {

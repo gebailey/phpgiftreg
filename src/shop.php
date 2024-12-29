@@ -134,6 +134,8 @@ else {
 	get to that record.  the theory is that most items will have quantity = 1 so we'll make the least
 	number of trips. */
 $stmt = $smarty->dbh()->prepare("SELECT i.itemid, description, price, source, c.category, url, image_filename, " .
+		"submitterid, " .
+		"us.fullname AS sfullname, " .
 		"ub.fullname AS bfullname, ub.userid AS boughtid, " .
 		"ur.fullname AS rfullname, ur.userid AS reservedid, " .
 		"rendered, i.comment, i.quantity " .
@@ -141,6 +143,7 @@ $stmt = $smarty->dbh()->prepare("SELECT i.itemid, description, price, source, c.
 	"LEFT OUTER JOIN {$opt["table_prefix"]}categories c ON c.categoryid = i.category " .
 	"LEFT OUTER JOIN {$opt["table_prefix"]}ranks r ON r.ranking = i.ranking " .
 	"LEFT OUTER JOIN {$opt["table_prefix"]}allocs a ON a.itemid = i.itemid AND i.quantity = 1 " .	// only join allocs for single-quantity items.
+	"LEFT OUTER JOIN {$opt["table_prefix"]}users us ON us.userid = i.submitterid " .
 	"LEFT OUTER JOIN {$opt["table_prefix"]}users ub ON ub.userid = a.userid AND a.bought = 1 " .
 	"LEFT OUTER JOIN {$opt["table_prefix"]}users ur ON ur.userid = a.userid AND a.bought = 0 " .
 	"WHERE i.userid = ? " .

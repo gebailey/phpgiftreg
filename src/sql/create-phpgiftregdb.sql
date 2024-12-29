@@ -67,6 +67,7 @@ INSERT INTO `events` VALUES (1,NULL,'Christmas','2000-12-25',1);
 CREATE TABLE `items` (
   `itemid` int(11) NOT NULL auto_increment,
   `userid` int(11) NOT NULL default '0',
+  `submitterid` int(11) NOT NULL default '0',
   `description` varchar(255) NOT NULL default '',
   `price` decimal(7,2) default NULL,
   `source` varchar(255) NOT NULL default '',
