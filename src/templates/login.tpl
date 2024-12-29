@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 	<script src="bootstrap/js/bootstrap.min.js"></script>
 	<script src="js/jquery.validate.min.js"></script>
 	<script src="js/giftreg.js"></script>
@@ -94,7 +94,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		</div>
 		<div class="row">
 			<div class="span8 offset2" style="text-align: right;">
-				<a href="http://sourceforge.net/projects/phpgiftreg">PHP Gift Registry version 2.1.2</a>
+				<a href="https://github.com/generalpf/phpgiftreg">PHP Gift Registry version 2.1.2</a>
 			</div>
 		</div>
 	</div>

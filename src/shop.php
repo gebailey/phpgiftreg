@@ -66,14 +66,14 @@ if (!empty($_GET["action"])) {
 			$price = (float) $row["price"];
 			$cat = (int) $row["category"];
 		
-			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}items(userid,description,price,source,url,comment,category,ranking,quantity) VALUES(?, ?, ?, ?, ?, ?, ?, 1, 1");
+			$stmt = $smarty->dbh()->prepare("INSERT INTO {$opt["table_prefix"]}items(userid,description,price,source,url,comment,category,ranking,quantity) VALUES(?, ?, ?, ?, ?, ?, ?, 1, 1)");
 			$stmt->bindParam(1, $userid, PDO::PARAM_INT);
 			$stmt->bindParam(2, $desc, PDO::PARAM_STR);
 			$stmt->bindParam(3, $price);
 			$stmt->bindParam(4, $source, PDO::PARAM_STR);
 			$stmt->bindParam(5, $url, PDO::PARAM_STR);
 			$stmt->bindParam(6, $comment, PDO::PARAM_STR);
-			$stmt->bindParam(7,	$cat, PDO::PARAM_INT);
+			$stmt->bindParam(7, $cat, PDO::PARAM_INT);
 			$stmt->execute();
 		
 			stampUser($userid, $smarty->dbh(), $smarty->opt());
@@ -143,7 +143,7 @@ $stmt = $smarty->dbh()->prepare("SELECT i.itemid, description, price, source, c.
 	"LEFT OUTER JOIN {$opt["table_prefix"]}allocs a ON a.itemid = i.itemid AND i.quantity = 1 " .	// only join allocs for single-quantity items.
 	"LEFT OUTER JOIN {$opt["table_prefix"]}users ub ON ub.userid = a.userid AND a.bought = 1 " .
 	"LEFT OUTER JOIN {$opt["table_prefix"]}users ur ON ur.userid = a.userid AND a.bought = 0 " .
-	"WHERE i.userid = $shopfor " .
+	"WHERE i.userid = ? " .
 	"ORDER BY " . $sortby);
 $stmt->bindParam(1, $shopfor, PDO::PARAM_INT);
 $stmt->execute();
